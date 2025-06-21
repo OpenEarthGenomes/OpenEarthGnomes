@@ -38,3 +38,5 @@ mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j4
 ./GenomeDatabase --help
+## 📜 License  
+[MIT License](LICENSE) - Free to use, modify, share!
