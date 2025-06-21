@@ -1,5 +1,3 @@
-# OpenEarthGnomes
-Free data Flora Fauna Gnomes  c++
 # 🌱 OpenEarthGenomes Project  
 **A Föld élőlényeinek genomtára – az élet újjáépítéséhez atomkatasztrófa után**  
 
