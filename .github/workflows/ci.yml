@@ -1,4 +1,38 @@
-name: Build and Test
+name: Main CI Pipeline
+on: [push]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      SQLITE_PATH: ${{ github.workspace }}/genomes.db
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libsqlite3-dev
+
+    - name: Configure project
+      run: cmake -B build -S .
+
+    - name: Build project
+      run: cmake --build build
+
+    - name: Run basic test
+      run: |
+        cd build
+        ./main_app
+        # Ellenőrizzük, létrejött-e az adatbázis
+        if [ -f "$SQLITE_PATH" ]; then
+          echo "✅ Database created successfully"
+        else
+          echo "❌ Database creation FAILED"
+          exit 1
+        finame: Build and Test
 on: [push]
 
 jobs:
