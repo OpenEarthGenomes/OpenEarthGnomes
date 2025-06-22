@@ -1,5 +1,4 @@
 # 🌱 OpenEarthGenomes Project  
-# 🌱 OpenEarthGenomes Project  
 **A Föld élőlényeinek genomtára – az élet újjáépítéséhez**  
 
 > "Az élet információja nem tulajdon – hanem minden élőlény közös öröksége."  
@@ -105,3 +104,37 @@ Másold a `libmysqlcppconn.dll` fájlt az EXE mellé:
 5. Indítsd el a Visual Studio-t és válaszd "Open a local folder"
 6. Tallózd ki a projekt mappáját
 7. Kattints a "Build" menüre → "Build All"
+
+
+Linux
+# 1. Install dependencies:
+sudo apt install git cmake g++ libmysqlclient-dev
+# 2. Clone repository:
+git clone https://github.com/OpenEarthGenomes/OpenEarthGnomes.git
+cd OpenEarthGnomes
+# 3. Create build directory:
+mkdir build
+cd build
+# 4. Configure with CMake:
+cmake .. -DCMAKE_BUILD_TYPE=Release
+# 5. Build project:
+make -j4
+
+
+C8onfigini
+[database]
+host = localhost     # MySQL szerver címe
+user = root          # MySQL felhasználónév
+password =           # MySQL jelszó
+database = EarthGenomes  # Adatbázis neve
+
+
+Install MySql server
+[paths]
+genomes = ./genomes  # Genomfájlok helye8
+
+Mmysql -u root -p < database/setup.sql
+
+
+
+## 🖼️ Project Structure / Projekt Szerkezet
