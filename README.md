@@ -138,3 +138,46 @@ Mmysql -u root -p < database/setup.sql
 
 
 ## 🖼️ Project Structure / Projekt Szerkezet
+📦 OpenEarthGnomes
+├── 📂 database
+│   └── setup.sql              # Adatbázis inicializáló szkript
+├── 📂 genomes                 # Genomfájlok tárolása
+│   ├── Triticum_aestivum.fasta # Búza genoma
+│   └── Apis_mellifera.fasta    # Méh genoma
+├── 📂 libs                    # Külső könyvtárak
+│   └── inih                   # INI fájl parser
+├── 📂 src                     # Forráskód
+│   ├── DatabaseManager.cpp    # Adatbázis kezelés
+│   ├── DatabaseManager.h      
+│   ├── GenomeLoader.cpp       # Genom betöltés
+│   ├── GenomeLoader.h         
+│   └── main.cpp               # Fő program
+├── 📜 CMakeLists.txt          # Fordítási konfiguráció
+├── 📜 config_sample.ini       # Konfigurációs minta
+├── 📜 CONTRIBUTING.md         # Közreműködési útmutató
+├── 📜 LICENSE                 # MIT licenc
+└── 📜 README.md               # Ez a fájl
+
+## 🚀 Getting Started / Kezdeti lépések
+1. **Build the application / Alkalmazás fordítása**  
+   Follow the installation steps above / Kövesd a fenti telepítési lépéseket
+   
+2. **Configure MySQL / MySQL beállítása**  
+   Create database with setup.sql / Hozd létre az adatbázist a setup.sql segítségével
+   
+3. **Run the program / Program futtatása**  
+   ```bash
+   # Windows
+   .\build\Release\GenomeDatabase.exe
+   
+   # Linux
+   ./build/GenomeDatabase
+   ```
+
+4. **Upload your first genome / Tölts fel első genomod**  
+   ```bash
+   GenomeDatabase --upload genomes/Triticum_aestivum.fasta
+   ```
+
+**Köszönjük, hogy részese vagy ennek a globális kezdeményezésnek!**  
+**Thank you for being part of this global initiative!** 🌍✨
