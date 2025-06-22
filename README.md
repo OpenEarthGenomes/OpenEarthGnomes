@@ -1,5 +1,53 @@
 # 🌱 OpenEarthGenomes Project  
-**A Föld élőlényeinek genomtára – az élet újjáépítéséhez atomkatasztrófa után**  
+# 🌱 OpenEarthGenomes Project  
+**A Föld élőlényeinek genomtára – az élet újjáépítéséhez**  
+
+> "Az élet információja nem tulajdon – hanem minden élőlény közös öröksége."  
+> "Genetic information is not property - it's the shared heritage of all life."  
+
+---
+
+## 🌐 Table of Contents / Tartalomjegyzék
+1. [Project Goals / Projekt célok](#-project-goals--projekt-célok)
+2. [Installation / Telepítés](#-installation--telepítés)
+3. [Configuration / Konfiguráció](#%EF%B8%8F-configuration--konfiguráció)
+4. [Database Setup / Adatbázis beállítás](#-database-setup--adatbázis-beállítás)
+5. [Sample Genomes / Példa Genomok](#-sample-genomes--példa-genomok)
+6. [Contribution / Közreműködés](#-contribution--közreműködés)
+7. [Philosophy / Filozófia](#-philosophy--filozófia)
+8. [License / Licenc](#-license--licenc)
+
+---
+
+## 🎯 Project Goals / Projekt célok
+### 🇬🇧 English
+- Create an open genomic database of Earth's biodiversity
+- Enable ecosystem restoration after catastrophic events
+- Provide free access to genetic information for research and education
+- Develop tools for easy genomic data management
+
+### 🇭🇺 Magyar
+- A Föld élővilágának nyílt genomadatbázisának létrehozása
+- Ökoszisztémák helyreállításának lehetővé tétele katasztrófák után
+- Ingyenes hozzáférés biztosítása genetikai információkhoz kutatás és oktatás számára
+- Egyszerű genomadatok kezelésére szolgáló eszközök fejlesztése
+
+---
+
+## 💻 Installation / Telepítés
+### Windows
+```bash
+# 1. Install Visual Studio 2022 with "Desktop development with C++"
+# 2. Clone repository:
+git clone https://github.com/OpenEarthGenomes/OpenEarthGnomes.git
+cd OpenEarthGnomes
+# 3. Create build directory:
+mkdir build
+cd build
+# 4. Configure with CMake:
+cmake .. -DCMAKE_BUILD_TYPE=Release
+# 5. Build project:
+cmake --build . --config Release**A Föld élőlényeinek genomtára – az élet újjáépítéséhez atomkatasztrófa után**  
 
 > "Az élet információja nem tulajdon – hanem minden élőlény közös öröksége."  
 
