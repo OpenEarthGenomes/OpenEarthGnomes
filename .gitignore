@@ -30,3 +30,15 @@
 *.exe
 *.out
 *.app
+# Build mappák
+build/
+out/
+
+# IDE fájlok
+.vs/
+.vscode/
+
+# Windows specifikus
+*.exe
+*.dll
+*.pdb
