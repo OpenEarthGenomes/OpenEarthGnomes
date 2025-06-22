@@ -1,4 +1,16 @@
 #include <iostream>
+#include "database.h"
+
+int main() {
+    try {
+        Database db("genomes.db");
+        std::cout << "✅ Database initialized successfully!" << std::endl;
+        return 0;
+    } catch(const std::exception& e) {
+        std::cerr << "❌ ERROR: " << e.what() << std::endl;
+        return 1; // Hibakód
+    }
+}#include <iostream>
 #include "DatabaseManager.h"
 #include "GenomeLoader.h"
 
