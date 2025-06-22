@@ -1,4 +1,25 @@
+// DatabaseManager.cpp
 #include "DatabaseManager.h"
+#include <fstream>
+#include <inih/INIReader.h> // INI parser hozzáadása
+
+DatabaseManager::DatabaseManager() {
+    // Konfig fájl olvasása
+    INIReader reader("config.ini");
+    
+    if (reader.ParseError() < 0) {
+        throw std::runtime_error("Nem található config.ini fájl!");
+    }
+
+    std::string host = reader.Get("database", "host", "localhost");
+    std::string user = reader.Get("database", "user", "root");
+    std::string password = reader.Get("database", "password", "");
+    std::string database = reader.Get("database", "database", "EarthGenomes");
+
+    driver = sql::mysql::get_mysql_driver_instance();
+    con = driver->connect("tcp://" + host + ":3306", user, password);
+    con->setSchema(database);
+}#include "DatabaseManager.h"
 #include <iostream>
 
 DatabaseManager::DatabaseManager(const std::string& host, const std::string& user, 
