@@ -1,4 +1,8 @@
-if(WIN32)
+# JAVÍTVA: 
+find_package(SQLite3 REQUIRED)  # Kisbetűs "SQLite3"
+
+# SQLite linkelés javítva:
+target_link_libraries(main_app PRIVATE ${SQLite3_LIBRARIES})if(WIN32)
 find_package(SQLite3 REQUIRED)
 set(SQLite3_LIBRARIES sqlite3)
 endif()cmake_minimum_required(VERSION 3.10)
