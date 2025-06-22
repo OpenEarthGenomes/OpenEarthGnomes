@@ -1,4 +1,31 @@
-# JAVÍTVA: 
+cmake_minimum_required(VERSION 3.10)
+
+# Projekt neve (NE legyen benne 'if'!)
+project(DatabaseApp)
+
+# Windows-specifikus beállítások
+if(WIN32)
+    # MySQL elérési útjának megadása Windows-on
+    set(MYSQL_DIR "C:/Program Files/MySQL/MySQL Server 8.0")  # Módosítsd a saját elérési utadra!
+    set(CMAKE_PREFIX_PATH "${MYSQL_DIR}/lib")
+    
+    # DLL-ek másolása a build mappába
+    add_custom_command(TARGET app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${MYSQL_DIR}/lib/libmysql.dll"
+            $<TARGET_FILE_DIR:app>
+    )
+endif()
+
+# Forrásfájlok hozzáadása
+add_executable(app 
+    src/database.cpp
+    src/main.cpp
+)
+
+# MySQL linkelése
+find_package(MySQL REQUIRED)
+target_link_libraries(app PRIVATE MySQL::MySQL)# JAVÍTVA: 
 find_package(SQLite3 REQUIRED)  # Kisbetűs "SQLite3"
 
 # SQLite linkelés javítva:
