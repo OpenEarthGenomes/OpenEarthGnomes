@@ -1,0 +1,17 @@
+jobs:
+  build_windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install MySQL
+      run: |
+        choco install mysql -y  # Chocolatey csomagkezelővel
+        echo "C:\Program Files\MySQL\MySQL Server 8.0\bin" >> $GITHUB_PATH
+
+    - name: Build
+      run: |
+        mkdir build
+        cd build
+        cmake .. -G "Visual Studio 16 2019"
+        cmake --build . --config Release
