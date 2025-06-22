@@ -1,4 +1,7 @@
-cmake_minimum_required(VERSION 3.10)
+if(WIN32)
+find_package(SQLite3 REQUIRED)
+set(SQLite3_LIBRARIES sqlite3)
+endif()cmake_minimum_required(VERSION 3.10)
 project(OpenEarthGnomes)
 
 # SQLite keresése
