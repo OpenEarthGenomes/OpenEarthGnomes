@@ -40,3 +40,15 @@ make -j4
 ./GenomeDatabase --help
 ## 📜 License  
 [MIT License](LICENSE) - Free to use, modify, share!
+
+## 🖥️ Fordítás Windows alatt
+
+1. Telepítsd a **Visual Studio 2022**-t (Community verzió ingyenes)
+2. A telepítőben jelöld be:
+   - `Desktop development with C++`
+   - `C++ CMake tools for Windows`
+3. Töltsd le a [MySQL Connector/C++ 8.0.37](https://dev.mysql.com/get/Downloads/Connector-C++/mysql-connector-c++-8.0.37-winx64.zip) fájlt
+4. Csomagold ki pl.: `C:\mysql-connector`
+5. Indítsd el a Visual Studio-t és válaszd "Open a local folder"
+6. Tallózd ki a projekt mappáját
+7. Kattints a "Build" menüre → "Build All"
