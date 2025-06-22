@@ -1,6 +1,29 @@
 cmake_minimum_required(VERSION 3.10)
 project(OpenEarthGnomes)
 
+# SQLite keresése
+find_package(SQLite3 REQUIRED)
+
+# Fejlécmappa beállítása
+include_directories(
+    include
+    ${SQLite3_INCLUDE_DIRS}  # SQLite fejlécek hozzáadása
+)
+
+# Forrásfájlok összegyűjtése
+file(GLOB SOURCES "src/*.cpp")
+
+# Fő program létrehozása
+add_executable(main_app ${SOURCES})
+
+# SQLite linkelése
+target_link_libraries(main_app PRIVATE SQLite::SQLite3)
+
+# Teszt rész
+enable_testing()
+add_subdirectory(tests)cmake_minimum_required(VERSION 3.10)
+project(OpenEarthGnomes)
+
 # KIJAVÍTVA:
 include_directories(include)  # Header mappa hozzáadva
 add_subdirectory(src)         # Forráskód hozzáadva
