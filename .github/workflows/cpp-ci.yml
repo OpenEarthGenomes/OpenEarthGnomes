@@ -1,0 +1,38 @@
+name: C++ CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++
+
+    - name: Download Catch2
+      run: |
+        mkdir -p tests
+        curl -L https://github.com/catchorg/Catch2/releases/download/v3.4.0/catch_amalgamated.cpp -o tests/catch_amalgamated.cpp
+        curl -L https://github.com/catchorg/Catch2/releases/download/v3.4.0/catch_amalgamated.hpp -o tests/catch_amalgamated.hpp
+
+    - name: Configure and build
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        make -j4
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure
