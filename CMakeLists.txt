@@ -1,4 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
+project(OpenEarthGnomes)
+
+# KIJAVÍTVA:
+include_directories(include)  # Header mappa hozzáadva
+add_subdirectory(src)         # Forráskód hozzáadva
+
+# Tesztkereső beállítás
+enable_testing()
+add_subdirectory(tests)cmake_minimum_required(VERSION 3.10)
 project(OpenEarthGenomes)
 
 # INI Parser hozzáadása
