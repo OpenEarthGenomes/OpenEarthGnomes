@@ -1,4 +1,16 @@
-name: Build and Test
+name: C++ Build
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        makename: Build and Test
 
 on: [push, pull_request]
 
