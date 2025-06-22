@@ -1,4 +1,10 @@
-name: Build and Test
+- name: Download test data
+  run: |
+    curl -L https://example.com/test_genomes.fa -o database/test_data.fa
+    
+- name: Run functional tests
+  working-directory: build
+  run: ./run_tests --data-path ../database/test_data.faname: Build and Test
 on: [push, pull_request]
 
 jobs:
