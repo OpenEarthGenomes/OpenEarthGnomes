@@ -20,6 +20,13 @@ DatabaseManager::DatabaseManager() {
     con = driver->connect("tcp://" + host + ":3306", user, password);
     con->setSchema(database);
 }#include "DatabaseManager.h"
+try {
+    con = driver->connect("tcp://" + host + ":3306", user, password);
+} catch (sql::SQLException &e) {
+    std::cerr << "MySQL Connection Error [" << e.getErrorCode() << "]: "
+              << e.what() << std::endl;
+    throw; // Újra dobjuk a kivételt
+}
 #include <iostream>
 
 DatabaseManager::DatabaseManager(const std::string& host, const std::string& user, 
