@@ -43,6 +43,11 @@ make -j4
 
 ## 🖥️ Fordítás Windows alatt
 
+**Fontos Windows alatt**: 
+Másold a `libmysqlcppconn.dll` fájlt az EXE mellé:
+1. A MySQL Connector `lib64\vs14` mappájából
+2. Az EXE fájlt tartalmazó mappába
+
 1. Telepítsd a **Visual Studio 2022**-t (Community verzió ingyenes)
 2. A telepítőben jelöld be:
    - `Desktop development with C++`
