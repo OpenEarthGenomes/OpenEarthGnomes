@@ -72,7 +72,7 @@ add_executable(GenomeDatabase
 )
 
 # Könyvtárak linkelése
+target_link_libraries(main_app PRIVATE SQLite::SQLite3)
 target_include_directories(GenomeDatabase PRIVATE ${MYSQL_INCLUDE_DIR})
-target_link_libraries(GenomeDatabase PRIVATE ${MYSQL_LIBRARY})
 # Include mappák hozzáadása
 include_directories(src/)
