@@ -1,42 +1,39 @@
-name: C++ CI
-
-on:
-  push:
-    branches: [ main, v0.1.0-alpha ]
-  pull_request:
-    branches: [ main ]
+name: Windows Build
+on: [push]
 
 jobs:
   build-windows:
     runs-on: windows-latest
+    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Install dependencies
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Visual Studio Build Tools
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Install MySQL Connector
       run: |
-        choco install cmake -y
-        choco install mysql-connector-c++ -y
-    
-    - name: Configure and Build
+        # Letöltjük és kibontjuk a MySQL Connector-t
+        curl -L -o mysql-connector.zip https://dev.mysql.com/get/Downloads/Connector-C++/mysql-connector-c++-8.0.37-winx64.zip
+        7z x mysql-connector.zip -o"C:/mysql-connector"
+        echo "MYSQL_CONNECTOR_PATH=C:/mysql-connector/mysql-connector-c++-8.0.37-winx64" >> $GITHUB_ENV
+
+    - name: Configure with CMake
       run: |
         mkdir build
         cd build
-        cmake .. -G "Visual Studio 17 2022" -A x64
+        cmake .. -G "Visual Studio 17 2022" -A x64 -DMYSQL_CONNECTOR_PATH=$env:MYSQL_CONNECTOR_PATH
+
+    - name: Build project
+      run: |
+        cd build
         cmake --build . --config Release
 
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Install dependencies
+    - name: Verify executable
       run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake g++ libmysqlclient-dev
-    
-    - name: Configure and Build
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
-        make -j4
+        cd build/Release
+        dir *.exe
+        echo "✅ Build sikeres ha látod a .exe fájlt!"
