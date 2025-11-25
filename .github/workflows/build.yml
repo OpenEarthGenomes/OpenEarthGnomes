@@ -1,17 +1,42 @@
+name: C++ CI
+
+on:
+  push:
+    branches: [ main, v0.1.0-alpha ]
+  pull_request:
+    branches: [ main ]
+
 jobs:
-  build_windows:
+  build-windows:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install MySQL
+    - name: Install dependencies
       run: |
-        choco install mysql -y  # Chocolatey csomagkezelővel
-        echo "C:\Program Files\MySQL\MySQL Server 8.0\bin" >> $GITHUB_PATH
-
-    - name: Build
+        choco install cmake -y
+        choco install mysql-connector-c++ -y
+    
+    - name: Configure and Build
       run: |
         mkdir build
         cd build
-        cmake .. -G "Visual Studio 16 2019"
+        cmake .. -G "Visual Studio 17 2022" -A x64
         cmake --build . --config Release
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libmysqlclient-dev
+    
+    - name: Configure and Build
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        make -j4
