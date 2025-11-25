@@ -42,3 +42,28 @@ out/
 *.exe
 *.dll
 *.pdb
+# Konfigurációs fájlok
+config.ini
+*.config
+
+# Adatbázis fájlok
+*.db
+*.sqlite
+*.mdf
+*.ldf
+
+# Ideiglenes fájlok
+*.tmp
+*.temp
+*.log
+
+# Bizalmas adatok
+*.key
+*.pem
+*.crt
+*.secret
+
+# Backup fájlok
+*.bak
+*.backup
+*~
