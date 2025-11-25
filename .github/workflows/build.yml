@@ -11,29 +11,16 @@ jobs:
 
     - name: Install Visual Studio Build Tools
       uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: x64
 
-    - name: Install MySQL Connector
-      run: |
-        # Letöltjük és kibontjuk a MySQL Connector-t
-        curl -L -o mysql-connector.zip https://dev.mysql.com/get/Downloads/Connector-C++/mysql-connector-c++-8.0.37-winx64.zip
-        7z x mysql-connector.zip -o"C:/mysql-connector"
-        echo "MYSQL_CONNECTOR_PATH=C:/mysql-connector/mysql-connector-c++-8.0.37-winx64" >> $GITHUB_ENV
-
-    - name: Configure with CMake
+    - name: Configure and build
       run: |
         mkdir build
         cd build
-        cmake .. -G "Visual Studio 17 2022" -A x64 -DMYSQL_CONNECTOR_PATH=$env:MYSQL_CONNECTOR_PATH
-
-    - name: Build project
-      run: |
-        cd build
+        cmake .. -G "Visual Studio 17 2022" -A x64
         cmake --build . --config Release
 
-    - name: Verify executable
+    - name: Check result
       run: |
         cd build/Release
-        dir *.exe
-        echo "✅ Build sikeres ha látod a .exe fájlt!"
+        echo "Készült fájlok:"
+        dir
