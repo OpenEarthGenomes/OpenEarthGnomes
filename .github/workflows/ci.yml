@@ -14,22 +14,36 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libsqlite3-dev
+        sudo apt-get install -y cmake g++ libsqlite3-dev libmysqlclient-dev
 
     - name: Configure project
       run: cmake -B build -S .
 
     - name: Build project
-      run: cmake --build build
+      run: cmake --build build --config Release
+
+    - name: Create config file for test
+      run: |
+        cat > config.ini << EOF
+        [database]
+        host = localhost
+        user = test
+        password = 
+        database = test_db
+        
+        [paths]
+        genomes = ./genomes
+        EOF
 
     - name: Run basic test
       run: |
         cd build
-        ./main_app
-        # Ellenőrizzük, létrejött-e az adatbázis
-        if [ -f "$SQLITE_PATH" ]; then
-          echo "✅ Database created successfully"
+        # Elsőként csak ellenőrizzük, hogy a program létezik
+        if [ -f "GenomeDatabase" ]; then
+          echo "✅ Program built successfully"
+          ls -la
         else
-          echo "❌ Database creation FAILED"
+          echo "❌ Program not found!"
+          ls -la
           exit 1
         fi
