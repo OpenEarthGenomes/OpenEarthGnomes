@@ -1,6 +1,27 @@
 cmake_minimum_required(VERSION 3.10)
 project(OpenEarthGenomes)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Forrásfájlok
+set(SOURCES
+    src/main.cpp
+    src/DatabaseManager.cpp
+    src/GenomeLoader.cpp
+    libs/inih/INIReader.cpp  # ⬅️ IDE ADD
+)
+
+add_executable(GenomeDatabase ${SOURCES})
+
+target_include_directories(GenomeDatabase PRIVATE 
+    src/
+    libs/inih  # ⬅️ IDE ADD
+)
+
+# ... MySQL rész maradcmake_minimum_required(VERSION 3.10)
+project(OpenEarthGenomes)
+
 # C++ standard beállítása
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
