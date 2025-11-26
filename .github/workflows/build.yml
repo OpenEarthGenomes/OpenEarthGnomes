@@ -33,7 +33,7 @@ jobs:
     - name: Build project
       run: |
         cd build
-        cmake --build . --config Release  # ⬅️ CSAK EZT A SORT MÓDOSÍTOTTAM
+        cmake --build . --config Release
 
     - name: Verify build
       run: |
