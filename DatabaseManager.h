@@ -1,23 +1,18 @@
 #pragma once
-#include <mysql_driver.h>
-#include <mysql_connection.h>
-#include <cppconn/prepared_statement.h>
-#include <stdexcept>
 #include <string>
+#include <mysql/jdbc.h>
 
 class DatabaseManager {
+private:
+    sql::mysql::MySQL_Driver* driver;
+    sql::Connection* connection;
+    
 public:
     DatabaseManager(const std::string& host, const std::string& user, 
                    const std::string& password, const std::string& database);
     ~DatabaseManager();
     
-    void uploadGenome(const std::string& commonName, 
-                     const std::string& scientificName, 
-                     const std::string& genomeData);
-    
-    std::string downloadGenome(const std::string& scientificName);
-
-private:
-    sql::mysql::MySQL_Driver* driver;
-    sql::Connection* con;
+    bool uploadGenome(const std::string& common_name, const std::string& scientific_name, 
+                     const std::string& genome_data);
+    std::string downloadGenome(const std::string& scientific_name);
 };
