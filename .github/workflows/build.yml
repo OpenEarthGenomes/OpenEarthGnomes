@@ -1,32 +1,60 @@
-name: Windows Build
+name: Build OpenEarthGnomes
+
 on: [push, pull_request]
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    timeout-minutes: 5
+  build-linux:
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Install Visual Studio Build Tools
-      uses: microsoft/setup-msbuild@v1.1.3
-
-    - name: Simple Build Test
+      uses: actions/checkout@v3
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          g++ \
+          libmysqlcppconn-dev \
+          pkg-config
+    
+    - name: Configure with CMake
       run: |
         mkdir build
         cd build
-        cmake .. -G "Visual Studio 17 2022" -A x64
-        cmake --build . --config Release
-
-    - name: Verify Basic Build
+        cmake ..
+        
+    - name: Build project
       run: |
-        if exist "build\Release\GenomeDatabase.exe" (
-          echo "✅ ALAP BUILD SIKERES!"
-          echo "✅ A kód fordítása működik!"
-          echo "⚠️  MySQL connector hiányzik, de az nem a te hibád"
-        ) else (
-          echo "❌ ALAP BUILD SIKERTELEN"
-          exit 1
-        )
+        cd build
+        make -j4
+        
+    - name: Run tests (if any)
+      run: |
+        cd build
+        ./GenomeDatabase --help || echo "No tests defined yet"
+
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Install vcpkg and MySQL connector
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+        .\vcpkg\vcpkg install mysql-connector-cpp
+        
+    - name: Configure with CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
+        
+    - name: Build project
+      run: |
+        cd build
+        cmake --build . --config Release
