@@ -1,168 +1,116 @@
-#include "DatabaseManager.h"
-#include "GenomeLoader.h"
-#include <iostream>
+              #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
+#include <filesystem>
 
-using namespace OpenEarthGenomes;
+namespace fs = std::filesystem;
 
-void printUsage(const char* programName) {
-    std::cout << "OpenEarthGenomes - Genomadatbázis kezelő\n"
-              << "Használat:\n"
-              << "  " << programName << " [OPCIÓK]\n\n"
-              << "Opciók:\n"
-              << "  --help              Segítség megjelenítése\n"
-              << "  --config FILE       Konfigurációs fájl megadása (alapértelmezett: config.ini)\n"
-              << "  --load FILE         FASTA fájl betöltése\n"
-              << "  --load-dir DIR      Könyvtár FASTA fájljainak betöltése\n"
-              << "  --search SPECIES    Faj keresése\n"
-              << "  --list              Összes faj listázása\n"
-              << "  --stats             Adatbázis statisztikák\n"
-              << "  --init              Adatbázis inicializálása\n"
-              << std::endl;
-}
+class SimpleGenomeStorage {
+private:
+    std::string storagePath;
 
-void printStats(DatabaseManager& db) {
-    std::cout << "\n=== Adatbázis Statisztikák ===\n";
-    std::cout << "Összes genom: " << db.getGenomeCount() << "\n";
-    
-    auto species = db.getSpeciesList();
-    std::cout << "Fajok száma: " << species.size() << "\n";
-    
-    if (!species.empty()) {
-        std::cout << "\nElső 10 faj:\n";
-        for (size_t i = 0; i < std::min(species.size(), size_t(10)); ++i) {
-            std::cout << "  " << (i+1) << ". " << species[i] << "\n";
-        }
+public:
+    SimpleGenomeStorage(const std::string& path = "./genomes/") : storagePath(path) {
+        // Create directory if it doesn't exist
+        fs::create_directories(storagePath);
     }
-    std::cout << std::endl;
-}
 
-void searchSpecies(DatabaseManager& db, const std::string& searchTerm) {
-    std::cout << "\nKeresés: '" << searchTerm << "'\n";
-    std::cout << "========================\n";
-    
-    auto results = db.findBySpecies(searchTerm);
-    
-    if (results.empty()) {
-        std::cout << "Nincs találat.\n";
-        return;
-    }
-    
-    std::cout << "Találatok (" << results.size() << " db):\n";
-    for (const auto& genome : results) {
-        std::cout << "ID: " << genome.id 
-                  << " | Faj: " << genome.species_name;
-        
-        if (!genome.common_name.empty()) {
-            std::cout << " (" << genome.common_name << ")";
+    bool saveGenome(const std::string& species, const std::string& scientificName, const std::string& genomeData) {
+        std::string filename = storagePath + scientificName + ".fasta";
+        std::ofstream file(filename);
+        if (!file.is_open()) {
+            std::cerr << "❌ Cannot open file for writing: " << filename << std::endl;
+            return false;
         }
         
-        std::cout << " | Hossz: " << genome.sequence_length << " bp";
+        file << ">" << species << " (" << scientificName << ")\n";
+        file << genomeData;
+        file.close();
         
-        if (!genome.file_source.empty()) {
-            std::cout << " | Forrás: " << genome.file_source;
+        std::cout << "✅ Genome saved to: " << filename << std::endl;
+        return true;
+    }
+
+    std::string loadGenome(const std::string& scientificName) {
+        std::string filename = storagePath + scientificName + ".fasta";
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+            std::cerr << "❌ Cannot open file for reading: " << filename << std::endl;
+            return "";
         }
         
-        std::cout << "\n";
+        std::string content((std::istreambuf_iterator<char>(file)), 
+                           std::istreambuf_iterator<char>());
+        file.close();
+        
+        std::cout << "✅ Genome loaded from: " << filename << std::endl;
+        return content;
     }
-    std::cout << std::endl;
-}
 
-int main(int argc, char* argv[]) {
-    std::cout << "OpenEarthGenomes v1.0 - A Föld élőlényeinek genomtára\n";
-    std::cout << "=====================================================\n\n";
+    void listAllGenomes() {
+        std::cout << "📁 Available genomes:" << std::endl;
+        for (const auto& entry : fs::directory_iterator(storagePath)) {
+            if (entry.path().extension() == ".fasta") {
+                std::cout << "   • " << entry.path().filename() << std::endl;
+            }
+        }
+    }
+};
 
-    // Alapértelmezett konfiguráció
-    std::string configFile = "config.ini";
+class GenomeLoader {
+public:
+    std::string loadFromFile(const std::string& filepath) {
+        std::ifstream file(filepath);
+        if (!file.is_open()) {
+            throw std::runtime_error("Cannot open file: " + filepath);
+        }
+        
+        std::string content((std::istreambuf_iterator<char>(file)), 
+                           std::istreambuf_iterator<char>());
+        return content;
+    }
+
+    bool saveToFile(const std::string& filepath, const std::string& genomeData) {
+        std::ofstream file(filepath);
+        if (!file.is_open()) {
+            return false;
+        }
+        
+        file << genomeData;
+        return true;
+    }
+};
+
+int main() {
+    std::cout << "🧬 OpenEarthGenomes - File-Based Genome Storage" << std::endl;
+    std::cout << "=============================================" << std::endl;
     
-    // Argumentumok feldolgozása
-    if (argc < 2) {
-        printUsage(argv[0]);
+    try {
+        SimpleGenomeStorage storage;
+        GenomeLoader loader;
+        
+        // Példa genom betöltése
+        std::string genomeData = "ATCGATCGATCGATCGATCGATCG\nGCTAGCTAGCTAGCTAGCTAGCTA";
+        
+        // Genom mentése fájlba
+        storage.saveGenome("Wheat", "Triticum_aestivum", genomeData);
+        storage.saveGenome("Corn", "Zea_mays", "CGTACGTACGTACGTACGTACGTACGTA");
+        
+        // Genom visszatöltése
+        std::string loadedGenome = storage.loadGenome("Triticum_aestivum");
+        if (!loadedGenome.empty()) {
+            std::cout << "✅ Genome storage test successful!" << std::endl;
+        }
+        
+        // Összes genom listázása
+        storage.listAllGenomes();
+        
+    } catch (const std::exception& e) {
+        std::cerr << "❌ Error: " << e.what() << std::endl;
         return 1;
     }
     
-    // Konfiguráció betöltése
-    auto config = loadConfigFromFile(configFile);
-    DatabaseManager db(config);
-    
-    // Kapcsolódás az adatbázishoz
-    if (!db.connect()) {
-        std::cerr << "HIBA: Nem sikerült kapcsolódni az adatbázishoz!\n";
-        std::cerr << "Ellenőrizd a MySQL szerver státuszát és a config.ini fájlt.\n";
-        std::cerr << "Hiba: " << db.getLastError() << std::endl;
-        return 1;
-    }
-
-    // Argumentumok feldolgozása
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        
-        if (arg == "--help") {
-            printUsage(argv[0]);
-            return 0;
-            
-        } else if (arg == "--config" && i + 1 < argc) {
-            configFile = argv[++i];
-            
-        } else if (arg == "--init") {
-            std::cout << "Adatbázis inicializálása...\n";
-            if (db.createTables()) {
-                std::cout << "Sikeres inicializálás!\n";
-            } else {
-                std::cerr << "Inicializálási hiba: " << db.getLastError() << std::endl;
-                return 1;
-            }
-            
-        } else if (arg == "--load" && i + 1 < argc) {
-            std::string filePath = argv[++i];
-            std::cout << "FASTA fájl betöltése: " << filePath << "\n";
-            
-            GenomeLoader loader(db);
-            if (loader.loadFASTAFile(filePath)) {
-                std::cout << "Sikeres betöltés!\n";
-                std::cout << "Betöltött szekvenciák: " << loader.getLoadedSequences() << "\n";
-                std::cout << "Összes bázispár: " << loader.getTotalBasePairs() << "\n";
-            } else {
-                std::cerr << "Betöltési hiba: " << loader.getLastError() << std::endl;
-            }
-            
-        } else if (arg == "--load-dir" && i + 1 < argc) {
-            std::string dirPath = argv[++i];
-            std::cout << "Könyvtár FASTA fájljainak betöltése: " << dirPath << "\n";
-            
-            GenomeLoader loader(db);
-            if (loader.loadFromDirectory(dirPath)) {
-                std::cout << "Sikeres betöltés!\n";
-                std::cout << "Betöltött szekvenciák: " << loader.getLoadedSequences() << "\n";
-                std::cout << "Összes bázispár: " << loader.getTotalBasePairs() << "\n";
-            } else {
-                std::cerr << "Betöltési hiba: " << loader.getLastError() << std::endl;
-            }
-            
-        } else if (arg == "--search" && i + 1 < argc) {
-            std::string searchTerm = argv[++i];
-            searchSpecies(db, searchTerm);
-            
-        } else if (arg == "--list") {
-            auto species = db.getSpeciesList();
-            std::cout << "\nÖsszes faj (" << species.size() << " db):\n";
-            std::cout << "====================\n";
-
-            for (size_t i = 0; i < species.size(); ++i) {
-                std::cout << (i+1) << ". " << species[i] << "\n";
-            }
-            std::cout << std::endl;
-            
-        } else if (arg == "--stats") {
-            printStats(db);
-            
-        } else {
-            std::cerr << "Ismeretlen argumentum: " << arg << std::endl;
-            printUsage(argv[0]);
-            return 1;
-        }
-    }
-    
+    std::cout << "🎉 Program completed successfully!" << std::endl;
     return 0;
 }
