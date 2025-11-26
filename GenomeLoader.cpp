@@ -1,29 +1,25 @@
 #include "GenomeLoader.h"
 #include <fstream>
 #include <sstream>
-#include <stdexcept>
+#include <iostream>
 
-std::string GenomeLoader::loadFromFile(const std::string& filePath) {
-    // Fájl megnyitása bináris módban
-    std::ifstream file(filePath, std::ios::binary);
-    
+std::string GenomeLoader::loadFromFile(const std::string& filepath) {
+    std::ifstream file(filepath);
     if (!file.is_open()) {
-        throw std::runtime_error("Hiba: Nem sikerült megnyitni a fájlt - " + filePath);
+        throw std::runtime_error("Cannot open file: " + filepath);
     }
-
-    // Fájl tartalmának beolvasása stringbe
-    std::ostringstream buffer;
+    
+    std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
 }
 
-void GenomeLoader::saveToFile(const std::string& filePath, const std::string& genomeData) {
-    // Fájl létrehozása és írás
-    std::ofstream file(filePath, std::ios::binary);
-    
+bool GenomeLoader::saveToFile(const std::string& filepath, const std::string& genome_data) {
+    std::ofstream file(filepath);
     if (!file.is_open()) {
-        throw std::runtime_error("Hiba: Nem sikerült létrehozni a fájlt - " + filePath);
+        return false;
     }
     
-    file.write(genomeData.c_str(), genomeData.size());
+    file << genome_data;
+    return true;
 }
