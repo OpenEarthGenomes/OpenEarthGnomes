@@ -1,242 +1,140 @@
-    (sequence_length)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        )";
+cmake_minimum_required(VERSION 3.15)
+project(OpenEarthGenomes)
 
-        m_session->sql(sql).execute();
-        
-        std::cout << "Adatbázis táblák létrehozva/ellenőrizve." << std::endl;
-        return true;
-        
-    } catch (const std::exception& e) {
-        setLastError("Tábla létrehozási hiba: " + std::string(e.what()));
-        std::cerr << "Tábla létrehozási hiba: " << e.what() << std::endl;
-        return false;
-    }
-}
+# Modern C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-bool DatabaseManager::insertGenome(const GenomeRecord& genome) {
-    if (!m_connected) {
-        setLastError("Nincs aktív adatbázis kapcsolat");
-        return false;
-    }
+# Build type beállítása debug információkkal
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
 
-    try {
-        auto sql = m_session->sql(R"(
-            INSERT INTO genomes 
-            (species_name, common_name, sequence, file_source, sequence_length) 
-            VALUES (?, ?, ?, ?, ?)
-        )");
-        
-        sql.bind(genome.species_name)
-           .bind(genome.common_name)
-           .bind(genome.sequence)
-           .bind(genome.file_source)
-           .bind(static_cast<int64_t>(genome.sequence_length));
-           
-        sql.execute();
-        
-        std::cout << "Genom beszúrva: " << genome.species_name << 
-                     " (" << genome.sequence_length << " bp)" << std::endl;
-        return true;
-        
-    } catch (const std::exception& e) {
-        setLastError("Beszúrási hiba: " + std::string(e.what()));
-        std::cerr << "Beszúrási hiba: " << e.what() << std::endl;
-        return false;
-    }
-}
+endif()
 
-std::vector<GenomeRecord> DatabaseManager::findBySpecies(const std::string& species_name) {
-    std::vector<GenomeRecord> results;
+# Compiler flags
+if(MSVC)
+    add_compile_options(/W4)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# Forrás fájlok
+set(SOURCES
+    src/main.cpp
+    src/DatabaseManager.cpp
+    src/GenomeLoader.cpp
+)
+
+# Executable létrehozása
+add_executable(GenomeDatabase ${SOURCES})
+
+# Include könyvtárak
+target_include_directories(GenomeDatabase PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs
+)
+
+# MySQL Connector/C++ keresése és linkelése
+if(WIN32)
+    # Windows környezet
+    message(STATUS "Configuring for Windows...")
     
-    if (!m_connected) {
-        setLastError("Nincs aktív adatbázis kapcsolat");
-        return results;
-    }
+    # MySQL Connector/C++ keresése több helyen
+    set(MYSQL_SEARCH_PATHS
+        "C:/Program Files/MySQL/Connector C++ 8.0"
+        "C:/Program Files/MySQL/MySQL Connector C++ 8.0"
+        "C:/mysql-connector-c++-8.0.37-winx64"
+        "$ENV{MYSQL_CONNECTOR_ROOT}"
+    )
 
-    try {
-        auto sql = m_session->sql(R"(
-            SELECT id, species_name, common_name, sequence, file_source, 
-                   upload_date, sequence_length 
-            FROM genomes 
-            WHERE species_name LIKE ?
-        )");
+
+    find_path(MYSQL_CONNECTOR_INCLUDE_DIR
+        NAMES mysqlx/xdevapi.h
+        PATHS ${MYSQL_SEARCH_PATHS}
+        PATH_SUFFIXES include
+        DOC "MySQL Connector/C++ include directory"
+    )
+    
+    find_library(MYSQL_CONNECTOR_LIB
+        NAMES mysqlcppconn8 mysqlcppconn8-static
+        PATHS ${MYSQL_SEARCH_PATHS}
+        PATH_SUFFIXES lib64/vs14 lib lib64
+        DOC "MySQL Connector/C++ library"
+    )
+    
+    if(MYSQL_CONNECTOR_INCLUDE_DIR AND MYSQL_CONNECTOR_LIB)
+        message(STATUS "Found MySQL Connector/C++:")
+        message(STATUS "  Include: ${MYSQL_CONNECTOR_INCLUDE_DIR}")
+        message(STATUS "  Library: ${MYSQL_CONNECTOR_LIB}")
         
-        auto result = sql.bind("%" + species_name + "%").execute();
+        target_include_directories(GenomeDatabase PRIVATE ${MYSQL_CONNECTOR_INCLUDE_DIR})
+        target_link_libraries(GenomeDatabase PRIVATE ${MYSQL_CONNECTOR_LIB})
         
-        for (auto row : result) {
-            results.push_back(resultToGenome(row));
-        }
-            } catch (const std::exception& e) {
-        setLastError("Keresési hiba: " + std::string(e.what()));
-        std::cerr << "Keresési hiba: " << e.what() << std::endl;
-    }
-    
-    return results;
-}
-
-std::vector<GenomeRecord> DatabaseManager::findByCommonName(const std::string& common_name) {
-    std::vector<GenomeRecord> results;
-    
-    if (!m_connected) {
-        setLastError("Nincs aktív adatbázis kapcsolat");
-        return results;
-    }
-
-    try {
-        auto sql = m_session->sql(R"(
-            SELECT id, species_name, common_name, sequence, file_source, 
-                   upload_date, sequence_length 
-            FROM genomes 
-            WHERE common_name LIKE ?
-        )");
+        # Windows specifikus linkek
+        target_link_libraries(GenomeDatabase PRIVATE ws2_32 crypt32 bcrypt)
         
-        auto result = sql.bind("%" + common_name + "%").execute();
-        for (auto row : result) {
-            results.push_back(resultToGenome(row));
-        }
+    else()
+        message(FATAL_ERROR "MySQL Connector/C++ not found! Please install it and set MYSQL_CONNECTOR_ROOT")
+    endif()
+
+    else()
+    # Linux/Unix környezet
+    message(STATUS "Configuring for Linux/Unix...")
+    
+    # pkg-config használata
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(MYSQLCPPCONN mysqlcppconn8)
+        if(MYSQLCPPCONN_FOUND)
+            target_include_directories(GenomeDatabase PRIVATE ${MYSQLCPPCONN_INCLUDE_DIRS})
+            target_link_libraries(GenomeDatabase PRIVATE ${MYSQLCPPCONN_LIBRARIES})
+            target_compile_options(GenomeDatabase PRIVATE ${MYSQLCPPCONN_CFLAGS_OTHER})
+        endif()
+    endif()
+    
+    # Ha pkg-config nem talált semmit, próbáljuk find_library-vel
+    if(NOT MYSQLCPPCONN_FOUND)
+        find_library(MYSQLCPPCONN_LIB 
+            NAMES mysqlcppconn8 mysqlcppconn
+            PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu
+        )
         
-    } catch (const std::exception& e) {
-        setLastError("Keresési hiba: " + std::string(e.what()));
-        std::cerr << "Keresési hiba: " << e.what() << std::endl;
-    }
-    
-    return results;
-}
-
-std::optional<GenomeRecord> DatabaseManager::findById(int id) {
-    if (!m_connected) {
-        setLastError("Nincs aktív adatbázis kapcsolat");
-        return std::nullopt;
-    }
-
-    try {
-        auto sql = m_session->sql(R"(
-            SELECT id, species_name, common_name, sequence, file_source, 
-                   upload_date, sequence_length 
-            FROM genomes 
-            WHERE id = ?
-        )");
+        find_path(MYSQLCPPCONN_INCLUDE 
+            NAMES mysqlx/xdevapi.h
+            PATHS /usr/include /usr/local/include /usr/include/mysql-cppconn-8
+        )
         
-        auto result = sql.bind(id).execute();
-        auto row = result.fetchOne();
-        
-        if (row) {
-            return resultToGenome(row);
-        }
-        
-    } catch (const std::exception& e) {
-        setLastError("Keresési hiba: " + std::string(e.what()));
-        std::cerr << "Keresési hiba: " << e.what() << std::endl;
-    }
-    
-    return std::nullopt;
-}
+        if(MYSQLCPPCONN_LIB AND MYSQLCPPCONN_INCLUDE)
+            message(STATUS "Found MySQL Connector/C++ via find_library:")
+            message(STATUS "  Include: ${MYSQLCPPCONN_INCLUDE}")
+            message(STATUS "  Library: ${MYSQLCPPCONN_LIB}")
+            
+            target_include_directories(GenomeDatabase PRIVATE ${MYSQLCPPCONN_INCLUDE})
+            target_link_libraries(GenomeDatabase PRIVATE ${MYSQLCPPCONN_LIB})
+        else()
+            message(FATAL_ERROR "MySQL Connector/C++ not found! Install with: sudo apt-get install libmysqlcppconn-dev")
+        endif()
+    endif()
+endif()
 
-size_t DatabaseManager::getGenomeCount() {
-    if (!m_connected) {
-        return 0;
-    }
-    try {
-        auto result = m_session->sql("SELECT COUNT(*) FROM genomes").execute();
-        auto row = result.fetchOne();
-        
-        if (row) {
-            return row[0].get<uint64_t>();
-        }
-        
-    } catch (const std::exception& e) {
-        setLastError("Számlálási hiba: " + std::string(e.what()));
-        std::cerr << "Számlálási hiba: " << e.what() << std::endl;
-    }
-    
-    return 0;
-}
+# INI parser hozzáadása (ha van libs/inih mappa)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libs/inih/ini.c")
+    message(STATUS "Adding INI parser from libs/inih")
+    target_sources(GenomeDatabase PRIVATE libs/inih/ini.c)
+    target_include_directories(GenomeDatabase PRIVATE libs/inih)
+    target_compile_definitions(GenomeDatabase PRIVATE INI_ALLOW_MULTILINE=1)
+endif()
 
-std::vector<std::string> DatabaseManager::getSpeciesList() {
-    std::vector<std::string> species;
-    
-    if (!m_connected) {
-        return species;
-    }
+# Debug információk
+message(STATUS "Build configuration:")
+message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "  Compiler: ${CMAKE_CXX_COMPILER_ID}")
 
-    try {
-        auto result = m_session->sql(
-            "SELECT DISTINCT species_name FROM genomes ORDER BY species_name"
-        ).execute();
-        
-        for (auto row : result) {
-            species.push_back(row[0].get<std::string>());
-        }
-        
-    } catch (const std::exception& e) {
-        setLastError("Fajlista hiba: " + std::string(e.what()));
-        std::cerr << "Fajlista hiba: " << e.what() << std::endl;
-    }
-    
-    return species;
-}
-
-std::string DatabaseManager::getLastError() const {
-    return m_lastError;
-}
-
-void DatabaseManager::setLastError(const std::string& error) {
-    m_lastError = error;
-}
-
-GenomeRecord DatabaseManager::resultToGenome(const mysqlx::Row& row) {
-    GenomeRecord genome;
-    
-    genome.id = row[0].get<int>();
-    genome.species_name = row[1].get<std::string>();
-    genome.common_name = row[2].isNull() ? "" : row[2].get<std::string>();
-    genome.sequence = row[3].get<std::string>();
-    genome.file_source = row[4].isNull() ? "" : row[4].get<std::string>();
-    genome.upload_date = row[5].isNull() ? "" : row[5].get<std::string>();
-    genome.sequence_length = row[6].get<uint64_t>();
-
-    return genome;
-}
-
-#ifdef INI_ALLOW_MULTILINE
-// INI parser callback
-static int config_handler(void* user, const char* section, const char* name, const char* value) {
-    DatabaseConfig* config = static_cast<DatabaseConfig*>(user);
-    
-    if (strcmp(section, "database") == 0) {
-        if (strcmp(name, "host") == 0) {
-            config->host = value;
-        } else if (strcmp(name, "user") == 0) {
-            config->user = value;
-        } else if (strcmp(name, "password") == 0) {
-            config->password = value;
-        } else if (strcmp(name, "database") == 0) {
-            config->database = value;
-        } else if (strcmp(name, "port") == 0) {
-            config->port = std::atoi(value);
-        }
-    }
-    
-    return 1;
-}
-#endif
-
-DatabaseConfig loadConfigFromFile(const std::string& configPath) {
-    DatabaseConfig config;
-    
-#ifdef INI_ALLOW_MULTILINE
-    if (ini_parse(configPath.c_str(), config_handler, &config) < 0) {
-        std::cerr << "Nem sikerült betölteni a konfigurációt: " << configPath << std::endl;
-        std::cerr << "Alapértelmezett beállítások használata." << std::endl;
-    } else {
-        std::cout << "Konfiguráció betöltve: " << configPath << std::endl;
-    }
-#else
-    std::cout << "INI parser nem elérhető, alapértelmezett beállítások használata." << std::endl;
-#endif
-    
-    return config;
-}
-
-} // namespace OpenEarthGenomes
+# Install rules
+install(TARGETS GenomeDatabase
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
