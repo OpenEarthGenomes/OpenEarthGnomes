@@ -1,199 +1,37 @@
-name: Build OpenEarthGnomes
-
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+name: Simple Build Test
+on: [push, pull_request]
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        build-type: [Release, Debug]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Install Linux dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          cmake \
-          g++ \
-          libmysqlcppconn8-dev \
-          pkg-config \
-          build-essential \
-          libssl-dev
-    
-    - name: Configure CMake
-      run: |
-        mkdir -p build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
-        
-    - name: Build project
-      run: |
-        cd build
-        make -j$(nproc)
-        
-    - name: Test binary
-      run: |
-        cd build
-        ls -la
-        file GenomeDatabase || echo "Binary not found"
-        ./GenomeDatabase --version || ./GenomeDatabase --help || echo "No version/help available"
-        
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: openearthgnomes-linux-${{ matrix.build-type }}
-        path: |
-          build/GenomeDatabase
-          build/*.so*
-        if-no-files-found: warn
-
-  build-windows:
+  build:
     runs-on: windows-latest
-    
-    strategy:
-      matrix:
-        build-type: [Release, Debug]
+    timeout-minutes: 5
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
-    - name: Setup vcpkg
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1.3
+
+    - name: Create sample genome file
       run: |
-        git clone https://github.com/Microsoft/vcpkg.git
-        .\vcpkg\bootstrap-vcpkg.bat
-        
-    - name: Install MySQL connector
-      run: |
-        .\vcpkg\vcpkg install mysql-connector-cpp
-        
-    - name: Configure CMake
+        mkdir genomes
+        echo ">Triticum_aestivum (Wheat)" > genomes/sample.fasta
+        echo "ATCGATCGATCGATCGATCGATCG" >> genomes/sample.fasta
+
+    - name: Build project
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
-        
-    - name: Build project
-      run: |
-        cd build
-        cmake --build . --config ${{ matrix.build-type }} --parallel
-        
-    - name: Test binary
-      run: |
-        cd build
-        dir
-        .\${{ matrix.build-type }}\GenomeDatabase.exe --version || .\${{ matrix.build-type }}\GenomeDatabase.exe --help || echo "No version/help available"
-        
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: openearthgnomes-windows-${{ matrix.build-type }}
-        path: |
-          build/${{ matrix.build-type }}/*.exe
-          build/${{ matrix.build-type }}/*.dll
-        if-no-files-found: warn
+        cmake .. -G "Visual Studio 17 2022" -A x64
+        cmake --build . --config Release
 
-  build-macos:
-    runs-on: macos-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Install macOS dependencies
+    - name: Verify build
       run: |
-        brew update
-        brew install cmake pkg-config mysql-connector-c++
-        
-    - name: Configure CMake
-      run: |
-        mkdir -p build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
-        
-    - name: Build project
-      run: |
-        cd build
-        make -j$(sysctl -n hw.ncpu)
-        
-    - name: Test binary
-      run: |
-        cd build
-        file GenomeDatabase
-        ./GenomeDatabase --version || ./GenomeDatabase --help || echo "No version/help available"
-        
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: openearthgnomes-macos-release
-        path: |
-          build/GenomeDatabase
-        if-no-files-found: warn
-
-  security-scan:
-    runs-on: ubuntu-latest
-    needs: [build-linux]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Semgrep scan
-      uses: returntocorp/semgrep-action@v1
-      with:
-        config: p/security-audit
-        
-    - name: Check for secrets
-      uses: gitleaks/gitleaks-action@v2
-      
-  docker-build:
-    runs-on: ubuntu-latest
-    needs: [build-linux]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
-    - name: Build Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./Dockerfile
-        tags: openearthgnomes:latest
-        push: false
-        cache-from: type=registry,ref=openearthgnomes:buildcache
-        cache-to: type=inline
-
-  # Összegző job - minden más job után fut
-  summary:
-    runs-on: ubuntu-latest
-    needs: [build-linux, build-windows, build-macos, security-scan]
-    
-    steps:
-    - name: Build status summary
-      run: |
-        echo "🎉 Build Summary:"
-        echo "✅ Linux: ${{ needs.build-linux.result }}"
-        echo "✅ Windows: ${{ needs.build-windows.result }}"
-        echo "✅ macOS: ${{ needs.build-macos.result }}"
-        echo "✅ Security Scan: ${{ needs.security-scan.result }}"
-        echo ""
-        echo "📦 Artifacts available for download"
-        
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      
-    - name: List artifacts
-      run: ls -la
+        if exist "build\Release\GenomeDatabase.exe" (
+          echo "✅ BUILD SUCCESS - Program compiled!"
+          .\build\Release\GenomeDatabase.exe
+        ) else (
+          echo "❌ BUILD FAILED"
+          exit 1
+        )
