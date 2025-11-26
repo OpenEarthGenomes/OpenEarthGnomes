@@ -1,3 +1,14 @@
+// Így tárolhatod a genomokat:
+genomes/
+├── Triticum_aestivum.fasta
+├── Arabidopsis_thaliana.fasta  
+├── Zea_mays.fasta
+└── indexes/
+    ├── species.index
+    ├── taxonomy.index
+    └── metadata.json
+
+
 ./GenomeDatabase --init
 ```
 
