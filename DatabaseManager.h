@@ -1,60 +1,70 @@
-#include "DatabaseManager.h"
-#include <iostream>
-#include <stdexcept>
+#pragma once
 
-DatabaseManager::DatabaseManager(const std::string& host, const std::string& user, 
-                               const std::string& password, const std::string& database) {
-    try {
-        driver = sql::mysql::get_mysql_driver_instance();
-        connection = driver->connect("tcp://" + host + ":3306", user, password);
-        connection->setSchema(database);
-        std::cout << "✅ MySQL database connected successfully!" << std::endl;
-    } catch (sql::SQLException& e) {
-        std::cerr << "❌ MySQL Error: " << e.what() << std::endl;
-        throw std::runtime_error("Database connection failed");
-    }
-}
+#include <string>
+#include <vector>
+#include <memory>
+#include <optional>
 
-DatabaseManager::~DatabaseManager() {
-    delete connection;
-}
+// MySQL Connector/C++ includes
+#include <mysqlx/xdevapi.h>
 
-bool DatabaseManager::uploadGenome(const std::string& common_name, const std::string& scientific_name, 
-                                 const std::string& genome_data) {
-    try {
-        sql::PreparedStatement* stmt = connection->prepareStatement(
-            "INSERT INTO genomes (common_name, scientific_name, sequence) VALUES (?, ?, ?)"
-        );
-        stmt->setString(1, common_name);
-        stmt->setString(2, scientific_name);
-        stmt->setString(3, genome_data);
-        stmt->execute();
-        delete stmt;
-        return true;
-    } catch (sql::SQLException& e) {
-        std::cerr << "❌ Upload error: " << e.what() << std::endl;
-        return false;
-    }
-}
+namespace OpenEarthGenomes {
 
-std::string DatabaseManager::downloadGenome(const std::string& scientific_name) {
-    try {
-        sql::PreparedStatement* stmt = connection->prepareStatement(
-            "SELECT sequence FROM genomes WHERE scientific_name = ?"
-        );
-        stmt->setString(1, scientific_name);
-        sql::ResultSet* res = stmt->executeQuery();
-        
-        std::string result;
-        if (res->next()) {
-            result = res->getString("sequence");
-        }
-        
-        delete res;
-        delete stmt;
-        return result;
-    } catch (sql::SQLException& e) {
-        std::cerr << "❌ Download error: " << e.what() << std::endl;
-        return "";
-    }
-}
+struct GenomeRecord {
+    int id;
+    std::string species_name;
+    std::string common_name;
+    std::string sequence;
+    std::string file_source;
+    std::string upload_date;
+    size_t sequence_length;
+};
+
+struct DatabaseConfig {
+    std::string host = "localhost";
+    std::string user = "root";
+    std::string password = "";
+    std::string database = "EarthGenomes";
+    int port = 3306;
+};
+
+class DatabaseManager {
+public:
+    explicit DatabaseManager(const DatabaseConfig& config);
+    ~DatabaseManager();
+
+    // Kapcsolat kezelése
+    bool connect();
+    void disconnect();
+    bool isConnected() const;
+
+    // Adatbázis műveleték
+    bool createTables();
+    bool insertGenome(const GenomeRecord& genome);
+    std::vector<GenomeRecord> findBySpecies(const std::string& species_name);
+    std::vector<GenomeRecord> findByCommonName(const std::string& common_name);
+    std::optional<GenomeRecord> findById(int id);
+    std::vector<GenomeRecord> getAllGenomes();
+    
+    // Statisztikák
+    size_t getGenomeCount();
+    std::vector<std::string> getSpeciesList();
+    
+    // Hibakezelés
+    std::string getLastError() const;
+
+private:
+    DatabaseConfig m_config;
+    std::unique_ptr<mysqlx::Session> m_session;
+    std::string m_lastError;
+    bool m_connected;
+
+    // Segéd függvények
+    void setLastError(const std::string& error);
+    GenomeRecord resultToGenome(const mysqlx::Row& row);
+};
+
+// Konfigurációs fájl betöltése
+DatabaseConfig loadConfigFromFile(const std::string& configPath = "config.ini");
+
+} // namespace OpenEarthGenomes
